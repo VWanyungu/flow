@@ -10,7 +10,11 @@ export async function playlistData(val) {
     alert("Invalid playlist url");
     return;
   }
-  await getToken();
+  const localToken = localStorage.getItem("token");
+  if(!localToken || localToken === "undefined"){
+    await getToken();
+  }
+
   let playlistId = extractPlaylistId(val);
   let playlistinfo = await getPlaylistInfo(playlistId);
 
@@ -18,10 +22,17 @@ export async function playlistData(val) {
 }
 
 export async function getToken() {
-  let configResponse = await fetch("http://localhost:5000/config")
-    .then((response) => response.json())
-    .then((data) => data);
-  let config = configResponse.config;
+  // let configResponse = await fetch("http://localhost:5000/config")
+  //   .then((response) => response.json())
+  //   .then((data) => data);
+  // let config = configResponse.config;
+  let config = {
+            "REACT_APP_SPOTIFY_CLIENT_ID": "41217831f42a45ffa6c96d4dc51b4c61",
+            "REACT_APP_SPOTIFY_CLIENT_SECRET": "9066c749df1e4546a493cde2466bfa5c",
+            "REACT_APP_SPOTIFY_REDIRECT_URI": "http://localhost:5173",
+            "REACT_APP_SPOTIFY_SCOPE": "user-read-private user-read-email playlist-modify-public playlist-modify-private",
+            "REACT_APP_SPOTIFY_AUTH_URL": "https://accounts.spotify.com/authorize",
+        }
 
   const urlParams = new URLSearchParams(window.location.search);
   let code = urlParams.get("code");
@@ -44,6 +55,9 @@ export async function getToken() {
   const response = await body.json();
 
   console.log(response);
+
+  localStorage.removeItem("token")
+  localStorage.removeItem("refresh_token")
 
   localStorage.setItem("token", response.access_token);
   localStorage.setItem("refresh_token", response.refresh_token);
@@ -76,6 +90,7 @@ async function refreshToken() {
   const data = await response.json();
 
   if (data.access_token) {
+    localStorage.removeItem("token");
     localStorage.setItem("token", data.access_token);
     console.log("Access token refreshed:", data.access_token);
   } else {
@@ -84,7 +99,7 @@ async function refreshToken() {
 }
 
 async function getPlaylistInfo(playlistId) {
-  const token = localStorage.getItem("token");
+  let token = localStorage.getItem("token");
 
   if (!token) {
     console.error("No access token found. Refreshing token...");

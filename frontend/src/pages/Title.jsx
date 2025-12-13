@@ -1,13 +1,14 @@
 // import "../css/title.css";
-import * as spotifyAuth from "../js/utils/spotifyAuth";
+import SpotifyAuth from "../js/utils/spotifyAuth";
+const spotifyAuth = new SpotifyAuth();
 
 function Title({ logo, heading, subheading }) {
   return (
     <div
       id="titleDiv"
-      className="container p-0 mb-0 d-flex flex-column align-items-start justify-content-start"
+      className="container p-0 mb-0 flex flex-col align-middle justify-start items-center"
     >
-      <div className="w-100 d-flex justify-content-between align-items-center">
+      <div className="w-100 flex justify-between align-middle">
         <img
           className="p-0 m-0"
           src={logo}
@@ -15,8 +16,8 @@ function Title({ logo, heading, subheading }) {
           style={{ border: "1px solid black", height: "70px", width: "70px" }}
         />
         <button
-          className="btn m-0 text-bg-warning p-2 ps-5 pe-5"
-          onClick={spotifyAuth.authorisation}
+          className="py-2 px-4 m-0 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-lg cursor-pointer transition-all duration-300 ease-in"
+          onClick={ () => spotifyAuth.authorisation()}
         >
           Authorize
         </button>

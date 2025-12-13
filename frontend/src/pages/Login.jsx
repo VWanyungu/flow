@@ -35,7 +35,6 @@ function Login() {
           </h1>
           <h1
             className="font-bold text-3xl mb-15 text-white"
-            onClick={authorize}
           >
             Sign in to Spotify to continue
           </h1>
@@ -51,10 +50,12 @@ function Login() {
                 cursor-pointer
                 transition-all duration-300 ease-in
             "
+          onClick={authorize}
         >
           Authorize
         </button>
       </div>
+      
       <div
         className="
             bg-[url(/david-pupaza-Km5J-KCP1Mw-unsplash.jpg)] bg-cover bg-center 
