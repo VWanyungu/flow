@@ -1,9 +1,8 @@
-const REACT_APP_SPOTIFY_CLIENT_ID = "41217831f42a45ffa6c96d4dc51b4c61";
-const REACT_APP_SPOTIFY_CLIENT_SECRET = "9066c749df1e4546a493cde2466bfa5c";
-const REACT_APP_SPOTIFY_REDIRECT_URI = "http://localhost:5173";
-const REACT_APP_SPOTIFY_SCOPE =
-  "user-read-private user-read-email playlist-modify-public playlist-modify-private";
-const REACT_APP_SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
+const VITE_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+const VITE_SPOTIFY_CLIENT_SECRET = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET;
+const VITE_SPOTIFY_REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
+const VITE_SPOTIFY_SCOPE = import.meta.env.VITE_SPOTIFY_SCOPE;
+const VITE_SPOTIFY_AUTH_URL = import.meta.env.VITE_SPOTIFY_AUTH_URL;
 
 export async function playlistData(val) {
   if (!validateInput(val)) {
@@ -11,6 +10,7 @@ export async function playlistData(val) {
     return;
   }
   const localToken = localStorage.getItem("token");
+  
   if(!localToken || localToken === "undefined"){
     await getToken();
   }
@@ -22,18 +22,6 @@ export async function playlistData(val) {
 }
 
 export async function getToken() {
-  // let configResponse = await fetch("http://localhost:5000/config")
-  //   .then((response) => response.json())
-  //   .then((data) => data);
-  // let config = configResponse.config;
-  let config = {
-            "REACT_APP_SPOTIFY_CLIENT_ID": "41217831f42a45ffa6c96d4dc51b4c61",
-            "REACT_APP_SPOTIFY_CLIENT_SECRET": "9066c749df1e4546a493cde2466bfa5c",
-            "REACT_APP_SPOTIFY_REDIRECT_URI": "http://localhost:5173",
-            "REACT_APP_SPOTIFY_SCOPE": "user-read-private user-read-email playlist-modify-public playlist-modify-private",
-            "REACT_APP_SPOTIFY_AUTH_URL": "https://accounts.spotify.com/authorize",
-        }
-
   const urlParams = new URLSearchParams(window.location.search);
   let code = urlParams.get("code");
   let codeVerifier = localStorage.getItem("code_verifier");
@@ -44,10 +32,10 @@ export async function getToken() {
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: new URLSearchParams({
-      client_id: config.REACT_APP_SPOTIFY_CLIENT_ID,
+      client_id: VITE_SPOTIFY_CLIENT_ID,
       grant_type: "authorization_code",
       code,
-      redirect_uri: config.REACT_APP_SPOTIFY_REDIRECT_URI,
+      redirect_uri: VITE_SPOTIFY_REDIRECT_URI,
       code_verifier: codeVerifier,
     }),
   };
@@ -77,7 +65,7 @@ async function refreshToken() {
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: new URLSearchParams({
-      client_id: REACT_APP_SPOTIFY_CLIENT_ID,
+      client_id: VITE_SPOTIFY_CLIENT_ID,
       grant_type: "refresh_token",
       refresh_token: refreshToken,
     }),
