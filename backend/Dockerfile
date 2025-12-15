@@ -32,4 +32,4 @@ EXPOSE 5000
 
 # Use Gunicorn to run Flask app in production
 # Ensure 'app.py' defines a 'app' instance or update 'app:app' accordingly
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "server:app"]
+CMD ["gunicorn","--timeout", "300", "--workers", "2","-b", "0.0.0.0:5000", "server:app"]
