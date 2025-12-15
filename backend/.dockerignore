@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual Environments
+venv/
+flowenv/
+.venv/
+env/
+ENV/
+
+# Environment Variables
+.env
+.env.*
+
+# Logs
+*.log
+logs/
+
+# Git
+.git/
+.gitignore
+
+# IDE / OSS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Project specific
+songs/*
+instance/
+*.db
+*.sqlite3
+coverage/
+htmlcov/
+dist/
+build/
+*.egg-info/

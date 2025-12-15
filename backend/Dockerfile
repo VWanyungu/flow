@@ -1,5 +1,5 @@
 # Use official lightweight Python image
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -9,9 +9,11 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Install system dependencies (FFmpeg + build tools)
+# libsndfile1 is required for soundfile/librosa
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     ffmpeg \
+    libsndfile1 \
     gcc \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -29,4 +31,5 @@ COPY . .
 EXPOSE 5000
 
 # Use Gunicorn to run Flask app in production
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
+# Ensure 'app.py' defines a 'app' instance or update 'app:app' accordingly
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "server:app"]

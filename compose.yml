@@ -1,0 +1,39 @@
+services:
+  backend:
+    container_name: flow-backend
+    image: ${CI_REGISTRY_IMAGE:-flow}/backend:main
+    build:
+      context: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=server.py
+    # Volumes removed to avoid conflict with 'develop.watch'
+    # 'docker compose watch' now handles file syncing and restarting.
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./backend
+          target: /app
+          ignore:
+            - __pycache__
+            - .venv
+            - flowenv
+
+  frontend:
+    container_name: flow-frontend
+    image: ${CI_REGISTRY_IMAGE:-flow}/frontend:main
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    develop:
+      watch:
+        - action: rebuild
+          path: ./frontend
+          ignore:
+            - node_modules
+            - dist

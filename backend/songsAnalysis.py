@@ -1,3 +1,6 @@
+import numpy as np
+from numpy import array, float32, float64, int16, int32, int64
+
 analyzed_songs = [{'bpm': np.float64(117.0),
   'fileName': 'Tamiditine.mp3',
   'key': 10,
