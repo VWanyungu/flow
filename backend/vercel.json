@@ -1,0 +1,19 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "server.py",
+        "use": "@vercel/python",
+        "config": {
+          "installCommand": "bash install-ffmpeg.sh && pip install --no-cache-dir -r requirements.txt",
+          "buildCommand": "echo 'No build step required for Flask'"
+        }
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "server.py"
+      }
+    ]
+  }
