@@ -1,0 +1,83 @@
+songs/*
+
+# --------------------
+# Python
+# --------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# --------------------
+# Virtual Environments
+# --------------------
+venv/
+flowenv/
+.venv/
+env/
+ENV/
+
+# --------------------
+# Flask / App Config
+# --------------------
+instance/
+*.sqlite3
+*.db
+
+# --------------------
+# Environment Variables
+# --------------------
+.env
+.env.*
+!.env.example
+
+# --------------------
+# Logs
+# --------------------
+*.log
+logs/
+
+# --------------------
+# Flask Uploads / Media
+# --------------------
+uploads/
+media/
+
+# --------------------
+# Migrations
+# (keep versions, ignore cache)
+# --------------------
+migrations/__pycache__/
+
+# --------------------
+# Testing / Coverage
+# --------------------
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --------------------
+# Build / Distribution
+# --------------------
+build/
+dist/
+*.egg-info/
+
+# --------------------
+# IDE / Editor
+# --------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --------------------
+# OS
+# --------------------
+.DS_Store
+Thumbs.db
+
+# --------------------
+# Docker
+# --------------------
+*.pid
