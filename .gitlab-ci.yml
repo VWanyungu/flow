@@ -1,10 +1,10 @@
-image: docker:stable  # Base image for the job (provides Docker CLI)
+image: docker:29.1  # Updated to current version with modern CLI
 
 services:
-  - docker:dind  # Enables Docker-in-Docker to build images inside the pipeline
+  - docker:29.1-dind  # Matching DinD version
 
 variables:
-  DOCKER_TLS_CERTDIR: "/certs"  # Required for dind security
+  DOCKER_TLS_CERTDIR: "/certs"  # Required for DinD security
 
 stages:
   - build
