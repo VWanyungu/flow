@@ -1,12 +1,11 @@
 
 class SpotifyAuth {
   constructor() {
-    this.REACT_APP_SPOTIFY_CLIENT_ID = "41217831f42a45ffa6c96d4dc51b4c61";
-    this.REACT_APP_SPOTIFY_CLIENT_SECRET = "9066c749df1e4546a493cde2466bfa5c";
-    this.REACT_APP_SPOTIFY_REDIRECT_URI = "http://localhost:5173";
-    this.REACT_APP_SPOTIFY_SCOPE =
-      "user-read-private user-read-email playlist-modify-public playlist-modify-private";
-    this.REACT_APP_SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
+    this.REACT_APP_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID
+    this.REACT_APP_SPOTIFY_CLIENT_SECRET = import.meta.env.VITE_SPOTIFY_CLIENT_SECRET
+    this.REACT_APP_SPOTIFY_REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI
+    this.REACT_APP_SPOTIFY_SCOPE = import.meta.env.VITE_SPOTIFY_SCOPE
+    this.REACT_APP_SPOTIFY_AUTH_URL = import.meta.env.VITE_SPOTIFY_AUTH_URL
   }
 
   async authorisation() {
@@ -15,7 +14,7 @@ class SpotifyAuth {
     const codeVerifier = this.generateRandomString(64);
     const hashed = await this.sha256(codeVerifier);
     const codeChallenge = this.base64encode(hashed);
-    const authUrl = new URL("https://accounts.spotify.com/authorize");
+    const authUrl = new URL(this.REACT_APP_SPOTIFY_AUTH_URL);
 
     window.localStorage.setItem("code_verifier", codeVerifier);
 

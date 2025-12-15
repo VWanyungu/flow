@@ -61,34 +61,33 @@ function App() {
 
     let tracks = playlist.tracks;
     let downloadResponse = await request(tracks, "download");
-    setStatus({ ...status, downloadComplete: true });
+    setStatus({ ...status, downloadComplete: downloadResponse.error ? false : true });
 
     console.log("downloadResponse", downloadResponse)
 
     let songsResponse = await request(tracks, "analyse");
     let songs = songsResponse.songs;
-    setStatus({ ...status, analyzingComplete: true });
+    setStatus({ ...status, analyzingComplete: songsResponse.error ? false : true });
 
-    console.log("anayse", songs)
+    console.log("analyse", songs)
 
     let graphResponse = await request(songs, "graph");
     let graph = graphResponse.graph;
-    setStatus({ ...status, comparingComplete: true });
+    setStatus({ ...status, comparingComplete: graphResponse.error ? false : true });
 
     console.log("graph", graph)
 
     let mstResponse = await request(graph, "mst");
     let mst = mstResponse.mst;
-    setStatus({ ...status, optimizingComplete: true });
+    setStatus({ ...status, optimizingComplete: mstResponse.error ? false : true });
 
     console.log("mst", mst)
 
-    let createdPlaylistId = await spotifyCreatePlaylist.createPlaylist(
-      mst,
-      playlistName
-    );
-    setStatus({...status, createPlaylist: true})
-    setCreatedPlaylistId(createdPlaylistId);
+    if(mst != undefined){
+      let createdPlaylistId = await spotifyCreatePlaylist.createPlaylist(mst,playlistName);
+      setStatus({...status, createPlaylist: true})
+      setCreatedPlaylistId(createdPlaylistId);
+    }
   }
 
   return (
