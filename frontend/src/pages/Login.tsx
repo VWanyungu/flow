@@ -1,17 +1,35 @@
 import { useEffect } from "react";
-import { NavLink } from "react-router";
-import SpotifyAuth from "../js/utils/spotifyAuth.js";
+import SpotifyAuth from "../js/utils/spotifyAuth";
 const sa = new SpotifyAuth();
 
+import { useAuth } from "../contexts/Auth";
+
 function Login() {
-  async function authorize() {
-    localStorage.clear();
-    await sa.authorisation();
+  const {authorize, getToken} = useAuth()
+
+  const loginHandler = async () => {
+    localStorage.clear()
+    await authorize()
   }
 
   useEffect(() => {
+    const fetchToken = async () => {
+      const res = await getToken()
+      if (res.status === "success"){
+        window.location.href = "/dashboard"
+      }
+    }
+
     let verifier = localStorage.getItem("code_verifier");
-    verifier && (window.location.href = "/dashboard");
+
+    if( verifier ){
+      const urlParams = new URLSearchParams(window.location.search);
+      let code = urlParams.get("code");
+
+      localStorage.setItem("code", code)
+
+      fetchToken()
+    }
   }, []);
 
   return (
@@ -50,9 +68,9 @@ function Login() {
                 cursor-pointer
                 transition-all duration-300 ease-in
             "
-          onClick={authorize}
+          onClick={loginHandler}
         >
-          Authorize
+          Sign in
         </button>
       </div>
       

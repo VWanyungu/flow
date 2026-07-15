@@ -30,7 +30,7 @@ class SpotifyAuth {
     window.location.href = authUrl.toString();
   }
 
-  generateRandomString(length) {
+  generateRandomString(length: string) {
     console.log("Generating random string for code verifier...");
 
     const possible =
