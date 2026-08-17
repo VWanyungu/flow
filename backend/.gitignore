@@ -81,3 +81,5 @@ Thumbs.db
 # Docker
 # --------------------
 *.pid
+
+songs
