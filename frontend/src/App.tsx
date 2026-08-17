@@ -56,9 +56,31 @@ function App() {
     // getOptimizedPlaylist(info, info.name);
   };
 
+  async function pollTask(taskId: string): Promise<any> {
+    while (true) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await httpRequest(`http://localhost:5000/tasks/${taskId}`, { method: "GET" });
+      if (res.status === "success" && res.data?.task) {
+        const task = res.data.task;
+        if (task.status === "completed") {
+          return task;
+        }
+        if (task.status === "failed") {
+          throw new Error(task.error || "Task processing failed");
+        }
+      }
+    }
+  }
+
   async function getOptimizedPlaylist(playlist: any, playlistName: string) {
+    if (!playlist || !playlist.tracks || playlist.tracks.length === 0) {
+      toast.error("Please fetch a valid playlist first");
+      return;
+    }
+
     setStatus((prev) => ({
       ...prev,
+      loading: true,
       downloadComplete: false,
       analyzingComplete: false,
       comparingComplete: false,
@@ -66,55 +88,83 @@ function App() {
       playlistCreated: false,
     }));
 
-    setActiveIndex(1)
+    setActiveIndex(1);
 
-    let tracks = playlist.tracks;
-    let downloadResponse = await httpRequest(`http://localhost:5000/download`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(tracks)
-    })
-    setStatus((prev) => ({ ...prev, downloadComplete: downloadResponse.status === "success" ? true : false }));
+    try {
+      const webhookUrl = "http://localhost:5000/webhook";
+      const tracks = playlist.tracks;
 
-    // let songsResponse = await httpRequest(`http://localhost:5000/analyse`, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify(tracks)
-    // })
-    // let songs = songsResponse.data;
-    // setStatus((prev) => ({ ...prev, analyzingComplete: !songsResponse.error }));
+      // 1. Download
+      let downloadResponse = await httpRequest(`http://localhost:5000/download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tracks, webhook_url: webhookUrl })
+      });
 
-    // let graphResponse = await httpRequest(`http://localhost:5000/graph`, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify(songs.songs)
-    // })
-    // let graph = graphResponse.data;
-    // setStatus((prev) => ({ ...prev, comparingComplete: !graphResponse.error }));
+      if (downloadResponse.status !== "success" || !downloadResponse.data?.task_id) {
+        throw new Error(downloadResponse.error || "Failed to initiate song download");
+      }
+      let downloadTask = await pollTask(downloadResponse.data.task_id);
+      if (downloadTask.warning) {
+        toast.warning(downloadTask.warning);
+      }
+      setStatus((prev) => ({ ...prev, downloadComplete: true }));
 
-    // let mstResponse = await httpRequest(`http://localhost:5000/mst`, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify(graph.graph)
-    // })
-    // let mst = mstResponse.data;
-    // setStatus((prev) => ({ ...prev, optimizingComplete: !mstResponse.error }));
-    
-    // setActiveIndex(2)
+      // 2. Analyse
+      let analyseResponse = await httpRequest(`http://localhost:5000/analyse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tracks, webhook_url: webhookUrl })
+      });
 
-    // if (mst != undefined) {
-    //   await createPlaylist(mst.mst, playlistName);
-    //   setStatus((prev) => ({ ...prev, playlistCreated: true, createPlaylist: true }));
-    //   toast.success("New playlist created successfully")
-    // }
+      if (analyseResponse.status !== "success" || !analyseResponse.data?.task_id) {
+        throw new Error(analyseResponse.error || "Failed to initiate song analysis");
+      }
+      let analyseTask = await pollTask(analyseResponse.data.task_id);
+      let songs = analyseTask.songs;
+      setStatus((prev) => ({ ...prev, analyzingComplete: true }));
+
+      // 3. Compare / Graph
+      let graphResponse = await httpRequest(`http://localhost:5000/graph`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ songs, webhook_url: webhookUrl })
+      });
+
+      if (graphResponse.status !== "success" || !graphResponse.data?.task_id) {
+        throw new Error(graphResponse.error || "Failed to initiate graph building");
+      }
+      let graphTask = await pollTask(graphResponse.data.task_id);
+      let graph = graphTask.graph;
+      setStatus((prev) => ({ ...prev, comparingComplete: true }));
+
+      // 4. Optimize / MST
+      let mstResponse = await httpRequest(`http://localhost:5000/mst`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ graph, webhook_url: webhookUrl })
+      });
+
+      if (mstResponse.status !== "success" || !mstResponse.data?.task_id) {
+        throw new Error(mstResponse.error || "Failed to initiate MST calculation");
+      }
+      let mstTask = await pollTask(mstResponse.data.task_id);
+      let mst = mstTask.mst;
+      setStatus((prev) => ({ ...prev, optimizingComplete: true }));
+
+      // Create Playlist on Spotify
+      if (mst && mst.length > 0) {
+        await createPlaylist(mst, playlistName);
+        setStatus((prev) => ({ ...prev, playlistCreated: true, createPlaylist: true }));
+        setActiveIndex(2);
+        toast.success("New playlist created successfully!");
+      }
+    } catch (err: any) {
+      console.error("Error in getOptimizedPlaylist:", err);
+      toast.error(err.message || "An error occurred during playlist processing");
+    } finally {
+      setStatus((prev) => ({ ...prev, loading: false }));
+    }
   }
 
   return (

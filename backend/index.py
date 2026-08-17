@@ -29,18 +29,24 @@ def clearFolder(folder_path):
             print(f'Failed to delete {file_path}. Reason: {e}')
 
 def serialize(obj):
-    if isinstance(obj, np.float32):
-        return float(obj)
+    if obj is Ellipsis or type(obj) is type(Ellipsis):
+        return None
     elif isinstance(obj, np.ndarray):
-        return obj.tolist()
+        return [serialize(i) for i in obj.tolist()]
+    elif isinstance(obj, (np.floating, float)):
+        return float(obj)
+    elif isinstance(obj, (np.integer, int)):
+        return int(obj)
     elif isinstance(obj, dict):
         return {k: serialize(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
+    elif isinstance(obj, (list, tuple)):
         return [serialize(i) for i in obj]
     return obj
 
 def deserialize(obj):
-    if isinstance(obj, float):
+    if obj is None:
+        return Ellipsis
+    elif isinstance(obj, float):
         return np.float32(obj)  # Convert float back to np.float32
     elif isinstance(obj, list):
         # Check if the list can be converted back to a numpy array
@@ -58,52 +64,63 @@ def downloadFromYoutube(songsObject):
 
     cache_map = {s["fileName"]: s for s in analyzed_songs}
 
-    existing_files = []
-    if os.path.exists("./songs"):
-        existing_files = os.listdir("./songs")
+    os.makedirs("./songs", exist_ok=True)
+    existing_files = os.listdir("./songs")
 
-    all_successful = True
+    downloaded = []
+    skipped = []
+    failed = []
     
     for item in songsObject:
-        # Check if song exists
         exists = False
 
         for filename in cache_map:
             if item["songName"].lower() in filename.lower():
                  print(f"   > Skipping: {item['songName']} (already analysed)")
+                 skipped.append(item['songName'])
                  exists = True
                  break
             
-        if (exists == False):
+        if not exists:
             for filename in existing_files:
                 if item["songName"].lower() in filename.lower():
                     print(f"   > Skipping: {item['songName']} (already downloaded)")
+                    skipped.append(item['songName'])
                     exists = True
                     break
         
         if exists:
             continue
 
-
         search_query = f"ytsearch1:{item['artist']} {item['songName']}"
-        result = subprocess.run([
-            sys.executable, "-m", "yt_dlp",
-            "-f", "bestaudio",
-            "-x",  # Extract audio
-            "--audio-format", "mp3",  # Convert to MP3
-            "-o", "./songs/%(title)s.%(ext)s",  # Output directory and filename template
-            search_query,
-            # "--ffmpeg-location", "/usr/bin/ffmpeg",  # Full path to ffmpeg on Ubuntu
-        ], capture_output=True, text=True)
+        try:
+            result = subprocess.run([
+                sys.executable, "-m", "yt_dlp",
+                "--no-check-certificates",
+                "-f", "bestaudio",
+                "-x",  # Extract audio
+                "--audio-format", "mp3",  # Convert to MP3
+                "-o", "./songs/%(title)s.%(ext)s",  # Output directory and filename template
+                search_query,
+            ], capture_output=True, text=True)
 
-        if result.returncode != 0:
-            print(f"   > Error downloading {item['songName']}: {result.stderr}")
-            all_successful = False
-        else:
-            print(f"   > Downloaded: {item['songName']} by {item['artist']}")
+            if result.returncode != 0:
+                print(f"   > Error downloading {item['songName']}: {result.stderr}")
+                failed.append(item['songName'])
+            else:
+                print(f"   > Downloaded: {item['songName']} by {item['artist']}")
+                downloaded.append(item['songName'])
+        except Exception as err:
+            print(f"   > Exception downloading {item['songName']}: {err}")
+            failed.append(item['songName'])
 
-    print("---> All downloads are complete!")
-    return all_successful
+    print("---> All downloads completed processing!")
+    return {
+        "success": True,
+        "downloaded": downloaded,
+        "skipped": skipped,
+        "failed": failed
+    }
             
 
 # Get characteristics of each song in the folder with extension extensions
@@ -199,19 +216,37 @@ def analyse(folder, listOfSongsToDownload, extensions=("mp3")):
 
 
 def getEdgeWeights(songA, songB, weights):
-    def fillArray(arr, target_length):
-        return np.pad(arr, (0, max(0, target_length - len(arr))), 'constant')
-    max_length = max(len(songA["onsets"]), len(songB["onsets"]))
-    songA["onsets"] = fillArray(songA["onsets"], max_length)
-    songB["onsets"] = fillArray(songB["onsets"], max_length)
+    bpmA = float(songA.get("bpm", 120))
+    bpmB = float(songB.get("bpm", 120))
+    keyA = float(songA.get("key", 0))
+    keyB = float(songB.get("key", 0))
+    loudnessA = float(songA.get("loudness", 0))
+    loudnessB = float(songB.get("loudness", 0))
 
-    bpm_diff = abs(songA["bpm"] - songB["bpm"])
-    key_diff = min(abs(songA["key"] - songB["key"]), 12 - abs(songA["key"] - songB["key"]))
-    loudness_diff = abs(songA["loudness"] - songB["loudness"])
-    energy_diff = cosine(songA["mfcc"], songB["mfcc"])
-    rhythm_diff = np.linalg.norm(np.array(songA["onsets"]) - np.array(songB["onsets"]))
+    bpm_diff = abs(bpmA - bpmB)
+    key_diff = min(abs(keyA - keyB), 12 - abs(keyA - keyB))
+    loudness_diff = abs(loudnessA - loudnessB)
 
-    return (weights[0] * bpm_diff + weights[1] * key_diff + weights[2] * loudness_diff + weights[3] * energy_diff + weights[4] * rhythm_diff )
+    mfccA = np.array([x for x in songA.get("mfcc", []) if isinstance(x, (int, float, np.number)) and x is not None], dtype=float)
+    mfccB = np.array([x for x in songB.get("mfcc", []) if isinstance(x, (int, float, np.number)) and x is not None], dtype=float)
+
+    if len(mfccA) > 0 and len(mfccB) > 0 and len(mfccA) == len(mfccB):
+        energy_diff = float(cosine(mfccA, mfccB))
+        if np.isnan(energy_diff):
+            energy_diff = 0.0
+    else:
+        energy_diff = 0.0
+
+    onsetsA = [float(x) for x in songA.get("onsets", []) if isinstance(x, (int, float, np.number)) and x is not None]
+    onsetsB = [float(x) for x in songB.get("onsets", []) if isinstance(x, (int, float, np.number)) and x is not None]
+
+    max_length = max(len(onsetsA), len(onsetsB))
+    paddedA = np.pad(onsetsA, (0, max(0, max_length - len(onsetsA))), 'constant')
+    paddedB = np.pad(onsetsB, (0, max(0, max_length - len(onsetsB))), 'constant')
+
+    rhythm_diff = float(np.linalg.norm(paddedA - paddedB))
+
+    return float(weights[0] * bpm_diff + weights[1] * key_diff + weights[2] * loudness_diff + weights[3] * energy_diff + weights[4] * rhythm_diff)
 
 def buildGraph(songs, weights):
     print("\n3. Building graph...")
@@ -258,6 +293,10 @@ def visualizegGaph(graph):
 
 def minimumSpanningTree(graph):
     print("\n4. Calculating Minimum Spanning Tree (MST)...")
+
+    if not graph:
+        print("---> Graph is empty! Returning empty MST.")
+        return []
 
     startNode = next(iter(graph))  # Pick an arbitrary starting node
     mst = []

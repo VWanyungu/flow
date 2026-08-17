@@ -10,7 +10,7 @@ Install dependencies
 ./flowenv/bin/python3 -m pip install --no-cache-dir -r requirements.txt
 
 # Run the application
-./flowenv/bin/python3 wsgi.py
+./flowenv/bin/python3 server.py
 
 # The server will start on http://127.0.0.1:5000
 
