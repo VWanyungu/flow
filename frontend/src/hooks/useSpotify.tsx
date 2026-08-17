@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
-import { Utils } from "../utils/utils"
-import { useAuth } from "../contexts/Auth"
-import { useRequest } from "./useRequest"
+import { Utils } from "../utils/utils.js"
+import { useAuth } from "../contexts/Auth.js"
+import { useRequest } from "./useRequest.js"
 import { toast } from "sonner"
 
 const utils = new Utils()
@@ -57,11 +57,11 @@ export const SpotifyProvider = ({children}) => {
         const info = await infoResponse.data
         const songs = await songsResponse.data
 
-        if (info.status != "success"){
+        if (infoResponse.status != "success"){
             toast.error("Error getting playlist info")
         }
 
-        if (songs.status != "success"){
+        if (songsResponse.status != "success"){
             toast.error("Error getting playlist songs")
         }
 

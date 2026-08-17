@@ -1,8 +1,5 @@
 import { useEffect } from "react";
-import SpotifyAuth from "../js/utils/spotifyAuth";
-const sa = new SpotifyAuth();
-
-import { useAuth } from "../contexts/Auth";
+import { useAuth } from "../contexts/Auth.js";
 
 function Login() {
   const {authorize, getToken} = useAuth()

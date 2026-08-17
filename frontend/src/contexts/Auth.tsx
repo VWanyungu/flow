@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { Utils } from "../utils/utils";
-import { useRequest } from "../hooks/useRequest";
+import { Utils } from "../utils/utils.js";
+import { useRequest } from "../hooks/useRequest.js";
 
 const utils = new Utils()
 

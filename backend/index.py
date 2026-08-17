@@ -1,6 +1,7 @@
 import sys
 import subprocess
 import numpy as np
+from numpy import float32
 import librosa
 from scipy.spatial.distance import cosine
 from itertools import combinations
@@ -55,18 +56,30 @@ def deserialize(obj):
 def downloadFromYoutube(songsObject):
     print("\n\n1. Downloading songs from YouTube...") 
 
+    cache_map = {s["fileName"]: s for s in analyzed_songs}
+
     existing_files = []
     if os.path.exists("./songs"):
         existing_files = os.listdir("./songs")
 
+    all_successful = True
+    
     for item in songsObject:
         # Check if song exists
         exists = False
-        for filename in existing_files:
+
+        for filename in cache_map:
             if item["songName"].lower() in filename.lower():
-                 print(f"   > Skipping: {item['songName']} (already downloaded)")
+                 print(f"   > Skipping: {item['songName']} (already analysed)")
                  exists = True
                  break
+            
+        if (exists == False):
+            for filename in existing_files:
+                if item["songName"].lower() in filename.lower():
+                    print(f"   > Skipping: {item['songName']} (already downloaded)")
+                    exists = True
+                    break
         
         if exists:
             continue
@@ -85,10 +98,12 @@ def downloadFromYoutube(songsObject):
 
         if result.returncode != 0:
             print(f"   > Error downloading {item['songName']}: {result.stderr}")
+            all_successful = False
         else:
             print(f"   > Downloaded: {item['songName']} by {item['artist']}")
 
     print("---> All downloads are complete!")
+    return all_successful
             
 
 # Get characteristics of each song in the folder with extension extensions

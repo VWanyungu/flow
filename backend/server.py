@@ -19,7 +19,10 @@ def downloadSongs():
                 return jsonify({'error': 'Invalid input, each item in the list should be a dictionary'}), 400
 
         # clearFolder("songs")
-        downloadFromYoutube(data)
+        success = downloadFromYoutube(data)
+        
+        if not success:
+            return jsonify({'error': 'Failed to download one or more songs'}), 500
 
         # songs = analyse("songs", data, "mp3")
 
@@ -46,6 +49,8 @@ def analyseSongs():
         songs = analyse("songs", data, "mp3")
 
         serailzedSongs = serialize(songs)
+
+        clearFolder("songs")
 
         return jsonify({'message': "Song analysis done successfully", "songs": serailzedSongs}), 200
     except Exception as e:
